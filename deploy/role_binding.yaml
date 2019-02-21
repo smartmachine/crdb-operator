@@ -1,0 +1,11 @@
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: crdb-operator
+subjects:
+- kind: ServiceAccount
+  name: crdb-operator
+roleRef:
+  kind: Role
+  name: crdb-operator
+  apiGroup: rbac.authorization.k8s.io
