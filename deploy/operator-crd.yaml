@@ -1,0 +1,82 @@
+apiVersion: apiextensions.k8s.io/v1beta1
+kind: CustomResourceDefinition
+metadata:
+  creationTimestamp: null
+  name: cockroachdbs.db.smartmachine.io
+spec:
+  group: db.smartmachine.io
+  names:
+    kind: CockroachDB
+    listKind: CockroachDBList
+    plural: cockroachdbs
+    singular: cockroachdb
+  scope: Namespaced
+  subresources:
+    status: {}
+  validation:
+    openAPIV3Schema:
+      properties:
+        apiVersion:
+          type: string
+        kind:
+          type: string
+        metadata:
+          type: object
+        spec:
+          properties:
+            client:
+              properties:
+                enable:
+                  type: boolean
+              type: object
+            cluster:
+              properties:
+                image:
+                  type: string
+                limitMemory:
+                  type: string
+                maxUnavailable:
+                  format: int64
+                  type: integer
+                requestMemory:
+                  type: string
+                size:
+                  format: int32
+                  type: integer
+                storagePerNode:
+                  type: string
+              type: object
+            dashboard:
+              properties:
+                enable:
+                  type: boolean
+                nodePort:
+                  format: int32
+                  type: integer
+              type: object
+          type: object
+        status:
+          properties:
+            nodes:
+              items:
+                properties:
+                  name:
+                    type: string
+                  ready:
+                    type: boolean
+                  serving:
+                    type: boolean
+                required:
+                - name
+                - ready
+                - serving
+                type: object
+              type: array
+            state:
+              type: string
+          type: object
+  version: v1alpha1
+  versions:
+  - name: v1alpha1
+    served: true
+    storage: true

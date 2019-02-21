@@ -1,0 +1,97 @@
+# Golang CircleCI 2.0 configuration file
+#
+# Check https://circleci.com/docs/2.0/language-go/ for more details
+version: 2
+
+
+defaults: &defaults
+  docker:
+    - image: circleci/golang:1.12
+  working_directory: /go/src/github.com/smartmachine/crdb-operator
+
+
+jobs:
+  build:
+    <<: *defaults
+    environment:
+      GOOS: linux
+      GOARCH: amd64
+      CGO_ENABLED: 0
+    steps:
+      - checkout
+      - run: dep ensure -v
+      - run: go build -o ./build/_output/bin/crdb-operator ./cmd/manager
+      - persist_to_workspace:
+          root: .
+          paths:
+            - LICENSE
+            - build
+            - deploy
+
+  deploy-snapshot:
+    <<: *defaults
+    steps:
+      - setup_remote_docker
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - attach_workspace:
+          at: .
+      - run: docker build . -f ./build/Dockerfile -t smartmachine/crdb-operator:$CIRCLE_SHA1
+      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:snapshot
+      - run: docker push smartmachine/crdb-operator
+
+  deploy-release:
+    <<: *defaults
+    steps:
+      - setup_remote_docker
+      - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
+      - run: docker pull smartmachine/crdb-operator:$CIRCLE_SHA1
+      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:$CIRCLE_TAG
+      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:latest
+      - run: docker push smartmachine/crdb-operator
+
+  publish-github-release:
+    <<: *defaults
+    steps:
+      - checkout
+      - run: sed -i "s/:snapshot/:$CIRCLE_TAG/g" ./deploy/operator.yaml
+      - run: cp LICENSE deploy
+      - run: tar --transform "s,^\.,crdb-operator-$CIRCLE_TAG," -cvjf crdb-operator-$CIRCLE_TAG.tbz -C deploy .
+      - run:
+          name: Publish on Github
+          command: |
+            go get github.com/tcnksm/ghr
+            go get github.com/git-chglog/git-chglog/cmd/git-chglog
+            ghr -n "CockroachDB Operator Release ${CIRCLE_TAG}" -b "$(git-chglog $(git describe --tags $(git rev-list --tags --max-count=1)))" -t ${GITHUB_TOKEN} -u ${CIRCLE_PROJECT_USERNAME} -r ${CIRCLE_PROJECT_REPONAME} -c ${CIRCLE_SHA1} -delete ${CIRCLE_TAG} crdb-operator-${CIRCLE_TAG}.tbz
+
+
+workflows:
+  version: 2
+  build-snapshot:
+    jobs:
+      - build:
+          filters:
+            branches:
+              only: /^master$/
+      - deploy-snapshot:
+          requires:
+            - build
+          filters:
+            branches:
+              only: /^master$/
+  publish-release:
+    jobs:
+      - deploy-release:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+      - publish-github-release:
+          requires:
+            - deploy-release
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              ignore: /.*/
+

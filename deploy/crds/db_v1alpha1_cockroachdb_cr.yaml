@@ -1,0 +1,18 @@
+apiVersion: db.smartmachine.io/v1alpha1
+kind: CockroachDB
+metadata:
+  name: crdb-test
+  namespace: crdb
+spec:
+  cluster:
+    image: cockroachdb/cockroach:v2.1.4
+    size: 3
+    requestMemory: 300Mi
+    limitMemory: 500Mi
+    storagePerNode: 100Gi
+    maxUnavailable: 1
+  client:
+    enable: true
+  dashboard:
+    enable: true
+    nodePort: 32000

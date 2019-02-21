@@ -1,7 +1,143 @@
+apiVersion: v1
+kind: Namespace
+metadata:
+  name: crdb
+---
+apiVersion: v1
+kind: ServiceAccount
+metadata:
+  name: crdb-operator
+  namespace: crdb
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: Role
+metadata:
+  name: crdb-operator
+  namespace: crdb
+rules:
+  - apiGroups:
+      - ""
+    resources:
+      - pods
+      - services
+      - endpoints
+      - persistentvolumeclaims
+      - events
+      - configmaps
+      - secrets
+    verbs:
+      - '*'
+  - apiGroups:
+      - ""
+    resources:
+      - namespaces
+    verbs:
+      - get
+  - apiGroups:
+      - ""
+    resources:
+      - serviceaccounts
+    verbs:
+      - '*'
+  - apiGroups:
+      - apps
+    resources:
+      - deployments
+      - daemonsets
+      - replicasets
+      - statefulsets
+    verbs:
+      - '*'
+  - apiGroups:
+      - policy
+    resources:
+      - poddisruptionbudgets
+    verbs:
+      - '*'
+  - apiGroups:
+      - batch
+    resources:
+      - jobs
+    verbs:
+      - '*'
+  - apiGroups:
+      - monitoring.coreos.com
+    resources:
+      - servicemonitors
+    verbs:
+      - get
+      - create
+  - apiGroups:
+      - db.smartmachine.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+---
+kind: RoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: crdb-operator
+  namespace: crdb
+subjects:
+  - kind: ServiceAccount
+    name: crdb-operator
+roleRef:
+  kind: Role
+  name: crdb-operator
+  apiGroup: rbac.authorization.k8s.io
+---
+apiVersion: rbac.authorization.k8s.io/v1
+kind: ClusterRole
+metadata:
+  name: crdb-operator
+rules:
+  - apiGroups:
+      - authorization.k8s.io
+    resources:
+      - localsubjectaccessreviews
+      - subjectaccessreviews
+    verbs:
+      - create
+  - apiGroups:
+      - certificates.k8s.io
+    resources:
+      - certificatesigningrequests
+      - certificatesigningrequests/approval
+    verbs:
+      - '*'
+  - apiGroups:
+      - rbac.authorization.k8s.io
+    resources:
+      - '*'
+    verbs:
+      - '*'
+---
+kind: ClusterRoleBinding
+apiVersion: rbac.authorization.k8s.io/v1
+metadata:
+  name: crdb-operator
+  namespace: crdb
+subjects:
+  - kind: ServiceAccount
+    name: crdb-operator
+    namespace: crdb
+roleRef:
+  kind: ClusterRole
+  name: crdb-operator
+  apiGroup: rbac.authorization.k8s.io
+---
 apiVersion: apps/v1
 kind: Deployment
 metadata:
   name: crdb-operator
+  namespace: crdb
 spec:
   replicas: 1
   selector:
@@ -15,10 +151,9 @@ spec:
       serviceAccountName: crdb-operator
       containers:
         - name: crdb-operator
-          # Replace this with the built image name
-          image: REPLACE_IMAGE
+          image: smartmachine/crdb-operator:snapshot
           command:
-          - crdb-operator
+            - crdb-operator
           imagePullPolicy: Always
           env:
             - name: WATCH_NAMESPACE

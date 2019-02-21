@@ -7,8 +7,8 @@ import (
 	"os"
 	"runtime"
 
-	"github.com/smartmachine/crdb-operator/pkg/apis"
-	"github.com/smartmachine/crdb-operator/pkg/controller"
+	"go.smartmachine.io/crdb-operator/pkg/apis"
+	"go.smartmachine.io/crdb-operator/pkg/controller"
 
 	"github.com/operator-framework/operator-sdk/pkg/k8sutil"
 	"github.com/operator-framework/operator-sdk/pkg/leader"
