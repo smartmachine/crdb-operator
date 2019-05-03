@@ -10,6 +10,7 @@
 - added some information to README.md
 
 ### Features
+- added post-commit hook for changelog gen
 - enable vendor cache on circleci
 
 
