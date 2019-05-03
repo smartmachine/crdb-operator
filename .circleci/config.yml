@@ -19,7 +19,15 @@ jobs:
       CGO_ENABLED: 0
     steps:
       - checkout
+      - restore_cache:
+          keys:
+            - vendor-cache-v1-{{ checksum "Gopkg.toml" }}
+            - vendor-cache-v1
       - run: dep ensure -v
+      - save_cache:
+          key: vendor-cache-v1-{{ checksum "Gopkg.toml" }}
+          paths:
+            - vendor
       - run: go build -o ./build/_output/bin/crdb-operator ./cmd/manager
       - persist_to_workspace:
           root: .
