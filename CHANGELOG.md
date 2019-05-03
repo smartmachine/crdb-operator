@@ -3,6 +3,7 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 ### Code Refactoring
+- updated version in version.go
 - added some information to README.md
 
 ### Features
