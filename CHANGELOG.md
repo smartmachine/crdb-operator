@@ -1,7 +1,8 @@
 # CRDB K8S Operator CHANGELOG
 
-<a name="unreleased"></a>
-## [Unreleased]
+
+<a name="v0.1.1"></a>
+## [v0.1.1] - 2019-05-03
 ### Bug Fixes
 - fix checkout path for circleci
 
@@ -20,4 +21,5 @@
 - added controllers for certs and crds
 
 
-[Unreleased]: https://github.com/smartmachine/crdb-operator/compare/v0.1.0...HEAD
+[Unreleased]: https://github.com/smartmachine/crdb-operator/compare/v0.1.1...HEAD
+[v0.1.1]: https://github.com/smartmachine/crdb-operator/compare/v0.1.0...v0.1.1
