@@ -2,6 +2,9 @@
 
 <a name="unreleased"></a>
 ## [Unreleased]
+### Bug Fixes
+- fix checkout path for circleci
+
 ### Code Refactoring
 - updated version in version.go
 - added some information to README.md

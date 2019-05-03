@@ -7,7 +7,7 @@ version: 2
 defaults: &defaults
   docker:
     - image: circleci/golang:1.12
-  working_directory: /go/src/github.com/smartmachine/crdb-operator
+  working_directory: /go/src/go.smartmachine.io/crdb-operator
 
 
 jobs:
