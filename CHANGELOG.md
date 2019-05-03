@@ -1,8 +1,16 @@
 # CRDB K8S Operator CHANGELOG
 
+<a name="unreleased"></a>
+## [Unreleased]
+### Code Refactoring
+- added some information to README.md
+
+### Features
+- enable vendor cache on circleci
+
 
 <a name="v0.1.0"></a>
-## v0.1.0 - 2019-02-21
+## v0.1.0 - 2019-05-03
 ### Features
 - added controllers for certs and crds
 
