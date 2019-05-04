@@ -3,6 +3,7 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 ### Bug Fixes
+- circleci only build master branch
 - enable circleci builds for all branches
 
 
