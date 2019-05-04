@@ -71,10 +71,7 @@ workflows:
   version: 2
   build-snapshot:
     jobs:
-      - build:
-          filters:
-            branches:
-              only: /^master$/
+      - build
       - deploy-snapshot:
           requires:
             - build

@@ -3,6 +3,7 @@
 <a name="unreleased"></a>
 ## [Unreleased]
 ### Bug Fixes
+- circleci build branches with open PRs
 - circleci only build master branch
 - enable circleci builds for all branches
 
