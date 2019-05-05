@@ -23,7 +23,9 @@ jobs:
           key: vendor-cache-v1-{{ checksum "Gopkg.lock" }}
           paths:
             - vendor
-      - run: go build -o ./build/_output/bin/crdb-operator ./cmd/manager
+      - run: go build -ldflags "-X main.version=$(git describe --dirty)" -o ./build/_output/bin/crdb-operator ./cmd/manager
+      - store_artifacts:
+          path: ./build
       - persist_to_workspace:
           root: .
           paths:
@@ -38,8 +40,7 @@ jobs:
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
       - attach_workspace:
           at: .
-      - run: docker build . -f ./build/Dockerfile -t smartmachine/crdb-operator:$CIRCLE_SHA1
-      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:snapshot
+      - run: docker build . -f ./build/Dockerfile -t smartmachine/crdb-operator:snapshot
       - run: docker push smartmachine/crdb-operator
 
   deploy-release:
@@ -47,9 +48,10 @@ jobs:
     steps:
       - setup_remote_docker
       - run: docker login -u $DOCKER_USER -p $DOCKER_PASS
-      - run: docker pull smartmachine/crdb-operator:$CIRCLE_SHA1
-      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:$CIRCLE_TAG
-      - run: docker tag smartmachine/crdb-operator:$CIRCLE_SHA1 smartmachine/crdb-operator:latest
+      - attach_workspace:
+          at: .
+      - run: docker build . -f ./build/Dockerfile -t smartmachine/crdb-operator:$CIRCLE_TAG
+      - run: docker tag smartmachine/crdb-operator:$CIRCLE_TAG smartmachine/crdb-operator:latest
       - run: docker push smartmachine/crdb-operator
 
   publish-github-release:
@@ -69,20 +71,25 @@ jobs:
 
 workflows:
   version: 2
-  build-snapshot:
+  build-crdb-operator:
     jobs:
-      - build
+      - build:
+          filters:
+            tags:
+              only: /^v.*/
+            branches:
+              only:
+                - dev
+                - /^feature.*/
       - deploy-snapshot:
           requires:
             - build
           filters:
             branches:
-              only: 
-                - /^master$/
-                - /^dev$/
-  publish-release:
-    jobs:
+              only: dev
       - deploy-release:
+          requires:
+            - build
           filters:
             tags:
               only: /^v.*/
