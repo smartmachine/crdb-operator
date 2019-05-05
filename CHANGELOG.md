@@ -1,6 +1,12 @@
 # CRDB K8S Operator CHANGELOG
 
 
+<a name="v0.1.3"></a>
+## [v0.1.3] - 2019-05-05
+
+- testing pull request integration with CHANGELOG.md generation ([#5](https://github.com/smartmachine/crdb-operator/issues/5))
+
+
 <a name="v0.1.2"></a>
 ## [v0.1.2] - 2019-05-05
 ### Code Refactoring
@@ -34,6 +40,7 @@
 - added controllers for certs and crds
 
 
-[Unreleased]: https://github.com/smartmachine/crdb-operator/compare/v0.1.2...HEAD
+[Unreleased]: https://github.com/smartmachine/crdb-operator/compare/v0.1.3...HEAD
+[v0.1.3]: https://github.com/smartmachine/crdb-operator/compare/v0.1.2...v0.1.3
 [v0.1.2]: https://github.com/smartmachine/crdb-operator/compare/v0.1.1...v0.1.2
 [v0.1.1]: https://github.com/smartmachine/crdb-operator/compare/v0.1.0...v0.1.1
