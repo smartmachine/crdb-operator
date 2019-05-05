@@ -24,6 +24,7 @@ jobs:
           paths:
             - vendor
       - run: go build -ldflags "-X main.version=$(git describe --dirty)" -o ./build/_output/bin/crdb-operator ./cmd/manager
+      - run: go test ./pkg/controller/cockroachdb
       - store_artifacts:
           path: ./build
       - persist_to_workspace:
