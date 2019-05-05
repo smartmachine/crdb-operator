@@ -4,4 +4,4 @@
 
 ## Introduction
 
-This is the introduction.
+This Operator manages CockroachDB clusters in Kubernetes.
