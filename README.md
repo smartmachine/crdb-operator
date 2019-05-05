@@ -5,3 +5,7 @@
 ## Introduction
 
 This Operator manages CockroachDB clusters in Kubernetes.
+
+### Background
+
+a,b,c
