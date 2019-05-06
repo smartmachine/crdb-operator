@@ -25,7 +25,7 @@ jobs:
             - vendor
       - run: go build -ldflags "-X main.version=$(git describe --dirty)" -o ./build/_output/bin/crdb-operator ./cmd/manager
       - run: go get -u github.com/jstemmer/go-junit-report
-      - run: mkdir -p test-results/golang
+      - run: mkdir -p test-results/junit
       - run: go test -v ./... | go-junit-report -set-exit-code > test-results/junit/junit.xml
       - store_test_results:
           path: test-results
