@@ -39,6 +39,10 @@ func TestMain(m *testing.M) {
 			Name:      name,
 			Namespace: namespace,
 		},
+		TypeMeta: metav1.TypeMeta{
+			APIVersion: "db.smartmachine.io/v1alpha1",
+			Kind: "CockroachDB",
+		},
 		Spec: dbv1alpha1.CockroachDBSpec{
 			Cluster: dbv1alpha1.CockroachDBClusterSpec{
 				Image: image,
@@ -49,9 +53,33 @@ func TestMain(m *testing.M) {
 				MaxUnavailable: maxUnavailableNodes,
 			},
 		},
+		Status: dbv1alpha1.CockroachDBStatus{
+			State: "Cluster Serving",
+			Nodes: []dbv1alpha1.CockroachDBNode{
+				{
+					Name: name + "-1",
+					Ready: false,
+					Serving: true,
+				},
+				{
+					Name: name + "-2",
+					Ready: false,
+					Serving: true,
+				},
+				{
+					Name: name + "-3",
+					Ready: false,
+					Serving: true,
+				},
+			},
+		},
 	}
 
 	pod1 := &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Pod",
+			APIVersion: "core/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "-1",
 			Namespace: namespace,
@@ -74,6 +102,10 @@ func TestMain(m *testing.M) {
 	}
 
 	pod2 := &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Pod",
+			APIVersion: "core/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "-2",
 			Namespace: namespace,
@@ -96,6 +128,10 @@ func TestMain(m *testing.M) {
 	}
 
 	pod3 := &corev1.Pod{
+		TypeMeta: metav1.TypeMeta{
+			Kind: "Pod",
+			APIVersion: "core/v1",
+		},
 		ObjectMeta: metav1.ObjectMeta{
 			Name: name + "-3",
 			Namespace: namespace,
@@ -116,8 +152,6 @@ func TestMain(m *testing.M) {
 			}},
 		},
 	}
-
-
 
 	objs := []runtime.Object{crdb, pod1, pod2, pod3}
 
@@ -170,8 +204,6 @@ func TestCockroachDBController(t *testing.T) {
 			req := reconcile.Request{
 				NamespacedName: crNamespacedName,
 			}
-
-
 
 			res, err := r.Reconcile(req)
 			if err != nil {
