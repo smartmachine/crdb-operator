@@ -4,6 +4,7 @@ import (
 	"context"
 	dbv1alpha1 "go.smartmachine.io/crdb-operator/pkg/apis/db/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
+	"k8s.io/api/policy/v1beta1"
 	rbacv1 "k8s.io/api/rbac/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
 	"k8s.io/apimachinery/pkg/runtime"
@@ -26,10 +27,10 @@ var (
 	storagePerNode      = "100Gi"
 	maxUnavailableNodes = 1
 
-	cl             client.Client
-	r              ReconcileCockroachDB
-	req            reconcile.Request
-	reqNoNamespace reconcile.Request
+	cl                        client.Client
+	r                         ReconcileCockroachDB
+	req                       reconcile.Request
+	reqNoNamespace            reconcile.Request
 
 )
 
@@ -77,15 +78,15 @@ func TestMain(m *testing.M) {
 }
 
 func TestCockroachDBController(t *testing.T) {
-
-
-
-	t.Run("TestServiceAccount", ServiceAccount)
-	t.Run("TestRole", Role)
-	t.Run("TestRoleBinding", RoleBinding)
-	t.Run("TestClusterRole", ClusterRole)
-	t.Run("TestClusterRoleBinding", ClusterRoleBinding)
-
+	t.Run("TestServiceAccount",      ServiceAccount)
+	t.Run("TestRole",                Role)
+	t.Run("TestRoleBinding",         RoleBinding)
+	t.Run("TestClusterRole",         ClusterRole)
+	t.Run("TestClusterRoleBinding",  ClusterRoleBinding)
+	t.Run("TestPublicService",       PublicService)
+	t.Run("TestService",             Service)
+	t.Run("TestPodDisruptionBudget", PodDisruptionBudget)
+	t.Run("TestStatefulSet",         StatefulSet)
 }
 
 func ServiceAccount(t *testing.T) {
@@ -179,5 +180,71 @@ func ClusterRoleBinding(t *testing.T) {
 	err = cl.Get(context.TODO(), reqNoNamespace.NamespacedName, role)
 	if err != nil {
 		t.Fatalf("get clusterrolebinding: (%+v)", err)
+	}
+}
+
+// Test if PublicService is created
+func PublicService(t *testing.T) {
+	customReq := reconcile.Request{
+		NamespacedName: types.NamespacedName{
+			Name:      name + "-public",
+			Namespace: namespace},
+	}
+	res, err := r.Reconcile(req)
+	if err != nil {
+		t.Fatalf("reconcile: (%v)", err)
+	}
+	// Check the result of reconciliation to make sure it has the desired state.
+	if !res.Requeue {
+		t.Error("reconcile did not requeue request as expected")
+	}
+
+	// Check if publicservice has been created
+	role := &corev1.Service{}
+	err = cl.Get(context.TODO(), customReq.NamespacedName, role)
+	if err != nil {
+		t.Fatalf("get publicservice: (%+v)", err)
+	}
+}
+
+// Test if Service is created
+func Service(t *testing.T) {
+	res, err := r.Reconcile(req)
+	if err != nil {
+		t.Fatalf("reconcile: (%v)", err)
+	}
+	// Check the result of reconciliation to make sure it has the desired state.
+	if !res.Requeue {
+		t.Error("reconcile did not requeue request as expected")
+	}
+
+	// Check if service has been created
+	role := &corev1.Service{}
+	err = cl.Get(context.TODO(), req.NamespacedName, role)
+	if err != nil {
+		t.Fatalf("get service: (%+v)", err)
+	}
+}
+
+// Test if PodDisruptionBudget is created
+func PodDisruptionBudget(t *testing.T) {
+	res, err := r.Reconcile(req)
+	if err != nil {
+		t.Fatalf("reconcile: (%v)", err)
+	}
+	// Check the result of reconciliation to make sure it has the desired state.
+	if !res.Requeue {
+		t.Error("reconcile did not requeue request as expected")
+	}
+
+	// Check if service has been created
+	obj := &v1beta1.PodDisruptionBudget{}
+	err = cl.Get(context.TODO(), req.NamespacedName, obj)
+	if err != nil {
+		t.Fatalf("get poddisruptionbudget: (%+v)", err)
+	}
+
+	if obj.Spec.MaxUnavailable.IntValue() != maxUnavailableNodes {
+		t.Fatalf("expected PodDisruptionBudget MaxUnavailable to be %d, got %d", maxUnavailableNodes, obj.Spec.MaxUnavailable.IntValue())
 	}
 }
