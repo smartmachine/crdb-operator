@@ -25,16 +25,16 @@ jobs:
             - vendor
       - run: go build -ldflags "-X main.version=$(git describe --dirty)" -o ./build/_output/bin/crdb-operator ./cmd/manager
       - run: go get -u github.com/jstemmer/go-junit-report
-      - run: mkdir test-results
-      - run: go test -bench -v ./pkg/controller/cockroachdb | go-junit-report -set-exit-code > test-results/cockroach_controller.xml
+      - run: mkdir -p test-results/golang
+      - run: go test -bench -v ./pkg/controller/cockroachdb | go-junit-report -set-exit-code > test-results/golang/cockroach_controller.xml
       - store_test_results:
           path: test-results
       - store_artifacts:
           path: ./build
-          prefix: build
+          prefix: /build
       - store_artifacts:
           path: ./test-results
-          prefix: test-results
+          prefix: /test-results
       - persist_to_workspace:
           root: .
           paths:
