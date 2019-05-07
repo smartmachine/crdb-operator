@@ -90,6 +90,7 @@ workflows:
               only:
                 - dev
                 - /^feature.*/
+                - /^release.*/
       - deploy-snapshot:
           requires:
             - build
