@@ -481,7 +481,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:03f62941b29f828d0cebf93c0793cf2bf40dee688a89cdba79e1d57382d39fe2"
+  digest = "1:0df70eb73174e6e58e2c986150b16c61859bea5a7b1a1801f37e12fb1c8ab8d1"
   name = "golang.org/x/net"
   packages = [
     "context",
@@ -492,7 +492,7 @@
     "idna",
   ]
   pruneopts = "NT"
-  revision = "7f726cade0ab7c929c16ce0b5b25bd201e25f39f"
+  revision = "f4e77d36d62c17c2336347bb2670ddbd02d092b7"
 
 [[projects]]
   branch = "master"
@@ -555,7 +555,7 @@
 
 [[projects]]
   branch = "master"
-  digest = "1:a66f11b02656ebac51a48a5135a10009065270efd199785ff28c38c86dc3a2de"
+  digest = "1:bcf56e37684fdc9d161bf7b3fd560797ec45744d709d3e60015c4d5e74429739"
   name = "golang.org/x/tools"
   packages = [
     "go/ast/astutil",
@@ -571,7 +571,7 @@
     "internal/semver",
   ]
   pruneopts = "NT"
-  revision = "5cec639030af3a6ada2732d9bfa1d3731ed55106"
+  revision = "3b6f9c0030f769fa3ded8a7f0d9420c71ac20caf"
 
 [[projects]]
   digest = "1:711179d92dbef98932acd7afd0dab80b4cf2d97f099f3285c9ba8fa451809fec"
@@ -867,6 +867,7 @@
     "pkg/client",
     "pkg/client/apiutil",
     "pkg/client/config",
+    "pkg/client/fake",
     "pkg/controller",
     "pkg/controller/controllerutil",
     "pkg/event",
@@ -951,6 +952,7 @@
     "k8s.io/client-go/discovery",
     "k8s.io/client-go/discovery/fake",
     "k8s.io/client-go/kubernetes",
+    "k8s.io/client-go/kubernetes/scheme",
     "k8s.io/client-go/plugin/pkg/client/auth/gcp",
     "k8s.io/client-go/rest",
     "k8s.io/client-go/testing",
@@ -967,6 +969,7 @@
     "k8s.io/kube-openapi/pkg/common",
     "sigs.k8s.io/controller-runtime/pkg/client",
     "sigs.k8s.io/controller-runtime/pkg/client/config",
+    "sigs.k8s.io/controller-runtime/pkg/client/fake",
     "sigs.k8s.io/controller-runtime/pkg/controller",
     "sigs.k8s.io/controller-runtime/pkg/controller/controllerutil",
     "sigs.k8s.io/controller-runtime/pkg/handler",
