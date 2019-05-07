@@ -11,6 +11,7 @@ options:
         - fix
         - perf
         - refactor
+        - pr
   commit_groups:
     group_by: Type
     sort_by: Scope
@@ -19,6 +20,7 @@ options:
       fix: Bug Fixes
       perf: Performance Improvements
       refactor: Code Refactoring
+      pr: Pull Requests
   header:
     pattern: "^(\\w*)(?:\\(([\\w\\$\\.\\-\\*\\s]*)\\))?\\:\\s(.*)$"
     pattern_maps:
@@ -32,6 +34,10 @@ options:
     actions:
       - Closes
       - Fixes
+  merges:
+    pattern: "^Merge branch '(\\w+)'$"
+    pattern_maps:
+      - Source
   notes:
     keywords:
       - BREAKING CHANGE
