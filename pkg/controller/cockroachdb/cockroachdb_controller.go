@@ -2,7 +2,6 @@ package cockroachdb
 
 import (
 	"context"
-	"fmt"
 	dbv1alpha1 "go.smartmachine.io/crdb-operator/pkg/apis/db/v1alpha1"
 	appsv1 "k8s.io/api/apps/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
@@ -47,6 +46,7 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,
 		OwnerType:    &dbv1alpha1.CockroachDB{},
+
 	})
 	if err != nil {
 		return err
@@ -63,8 +63,6 @@ type ReconcileCockroachDB struct {
 	// that reads objects from the cache and writes to the apiserver
 	client client.Client
 	scheme *runtime.Scheme
-	nodes  dbv1alpha1.CockroachDBNode
-	status string
 }
 
 // Reconcile reads that state of the cluster for a CockroachDB object and makes changes based on the state read
@@ -89,25 +87,11 @@ func (r *ReconcileCockroachDB) Reconcile(request reconcile.Request) (reconcile.R
 		return reconcile.Result{}, err
 	}
 
-	defer r.UpdateStatus(cockroachdb)
-
-	for _, info := range Enumerate() {
+	for _, info := range resources {
 		if recon, result, err := info.Reconcile.CallHandler(&info, cockroachdb, r); recon == true {
 			return result, err
 		}
 	}
 
 	return reconcile.Result{}, nil
-}
-
-func (r *ReconcileCockroachDB) UpdateStatus(db *dbv1alpha1.CockroachDB) {
-	if r.status != db.Status.State {
-		db.Status.State = r.status
-		err := r.client.Status().Update(context.TODO(), db)
-		if err != nil {
-			log.Error(err, "unable to update Status on CockroachDB object")
-			return
-		}
-		log.Info(fmt.Sprintf("UpdateStatus State: %+v ", db.Status))
-	}
 }

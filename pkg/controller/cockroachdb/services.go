@@ -4,6 +4,7 @@ import (
 	dbv1alpha1 "go.smartmachine.io/crdb-operator/pkg/apis/db/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
@@ -32,7 +33,7 @@ func init() {
 
 
 // publicServiceForCockroachDB returns a cockroachdb Service object
-func PublicServiceForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) interface{} {
+func publicService(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
 	reqLogger.Info("Reconciling CockroachDB")
@@ -77,7 +78,7 @@ func PublicServiceForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.Cockroac
 }
 
 // serviceForCockroachDB returns a cockroachdb Service object
-func ServiceForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) interface{} {
+func service(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
 	reqLogger.Info("Reconciling CockroachDB")

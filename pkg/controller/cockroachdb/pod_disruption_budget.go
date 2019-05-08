@@ -4,25 +4,13 @@ import (
 	dbv1alpha1 "go.smartmachine.io/crdb-operator/pkg/apis/db/v1alpha1"
 	policyv1beta1 "k8s.io/api/policy/v1beta1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const (
-	PodDisruptionBudgetHandler Name = 800
-)
-
-func init() {
-	// Register PodDisruptionBudget
-	info := NewInfo(PodDisruptionBudgetForCockroachDB, createIfNotExist, &policyv1beta1.PodDisruptionBudget{})
-	err := Register(PodDisruptionBudgetHandler, info)
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 // podDisruptionBudgetForCockroachDB returns a cockroachdb PodDisruptionBudget object
-func PodDisruptionBudgetForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) interface{} {
+func podDisruptionBudget(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
 	reqLogger.Info("Reconciling CockroachDB")

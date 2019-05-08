@@ -1,7 +1,6 @@
 apiVersion: apiextensions.k8s.io/v1beta1
 kind: CustomResourceDefinition
 metadata:
-  creationTimestamp: null
   name: cockroachdbs.db.smartmachine.io
 spec:
   group: db.smartmachine.io
@@ -17,8 +16,14 @@ spec:
     openAPIV3Schema:
       properties:
         apiVersion:
+          description: 'APIVersion defines the versioned schema of this representation
+            of an object. Servers should convert recognized schemas to the latest
+            internal value, and may reject unrecognized values. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#resources'
           type: string
         kind:
+          description: 'Kind is a string value representing the REST resource this
+            object represents. Servers may infer this from the endpoint the client
+            submits requests to. Cannot be updated. In CamelCase. More info: https://git.k8s.io/community/contributors/devel/api-conventions.md#types-kinds'
           type: string
         metadata:
           type: object
@@ -41,6 +46,7 @@ spec:
                 requestMemory:
                   type: string
                 size:
+                  description: Size is the number of nodes the cluster should have
                   format: int32
                   type: integer
                 storagePerNode:
@@ -57,7 +63,10 @@ spec:
           type: object
         status:
           properties:
+            initialised:
+              type: boolean
             nodes:
+              description: Nodes are the names of the cockroachdb pods
               items:
                 properties:
                   name:
@@ -72,8 +81,15 @@ spec:
                 - serving
                 type: object
               type: array
-            state:
-              type: string
+            readyforinit:
+              type: boolean
+            serving:
+              type: boolean
+          required:
+          - nodes
+          - readyforinit
+          - initialised
+          - serving
           type: object
   version: v1alpha1
   versions:

@@ -63,6 +63,8 @@ spec:
           type: object
         status:
           properties:
+            initialised:
+              type: boolean
             nodes:
               description: Nodes are the names of the cockroachdb pods
               items:
@@ -79,8 +81,15 @@ spec:
                 - serving
                 type: object
               type: array
-            state:
-              type: string
+            readyforinit:
+              type: boolean
+            serving:
+              type: boolean
+          required:
+          - nodes
+          - readyforinit
+          - initialised
+          - serving
           type: object
   version: v1alpha1
   versions:

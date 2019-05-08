@@ -5,22 +5,12 @@ import (
 	batchv1 "k8s.io/api/batch/v1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const BatchJobHandler Name = 1100
-
-func init() {
-	// Register BatchJob
-	info := NewInfo(BatchJobForCockroachDB, initCluster, &batchv1.Job{})
-	err := Register(BatchJobHandler, info)
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 // jobForCockroachDB returns a cockroachdb Job object
-func BatchJobForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) interface{} {
+func batchJob(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
 	reqLogger.Info("Reconciling CockroachDB Batch Job")
