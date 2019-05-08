@@ -8,7 +8,6 @@ import (
 	corev1 "k8s.io/api/core/v1"
 	"k8s.io/apimachinery/pkg/api/errors"
 	"k8s.io/apimachinery/pkg/labels"
-	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/types"
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
@@ -17,8 +16,9 @@ import (
 )
 
 func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
-	name := reflect.TypeOf(info.Object).String()
-	reqLogger := log.WithValues(name + ".Name", db.Name, name + ".Namespace", db.Namespace)
+	resource := info.Resource.CallHandler(r, db)
+	resourceName := reflect.TypeOf(resource).String()
+	reqLogger := log.WithValues(resourceName + ".Name", db.Name, resourceName + ".Namespace", db.Namespace)
 
 	if info.SpecConditional != "" {
 		val, err := lookup.LookupString(*db, info.SpecConditional)
@@ -40,31 +40,31 @@ func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockro
 	}
 
 	// Check if the Object already exists, if not create a new one
-	err := r.client.Get(context.TODO(), objectName, info.Object)
+	err := r.client.Get(context.TODO(), objectName, resource)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new resource object
-		dep := info.Resource.CallHandler(r, db)
-		reqLogger.Info(fmt.Sprintf("Creating a new %s", name))
-		err = r.client.Create(context.TODO(), dep.(runtime.Object))
+		reqLogger.Info(fmt.Sprintf("Creating a new %s", resourceName))
+		err = r.client.Create(context.TODO(), resource)
 		if err != nil {
-			reqLogger.Error(err, fmt.Sprintf("Failed to create a new %s", name))
+			reqLogger.Error(err, fmt.Sprintf("Failed to create a new %s", resourceName))
 			return true, reconcile.Result{}, err
 		}
-		if !info.SuppressStatus {
-			r.status = fmt.Sprintf("Created %s(%s)", name, objectName.Name)
-		}
-		// Resource created successfully - return and requeue
-		return true, reconcile.Result{Requeue: true}, nil
+		// Resource created successfully - return
+		return false, reconcile.Result{}, nil
 	} else if err != nil {
-		reqLogger.Error(err, fmt.Sprintf("Failed to get %s", name))
+		reqLogger.Error(err, fmt.Sprintf("Failed to get %s", resourceName))
 		return true, reconcile.Result{}, err
 	}
 	return false, reconcile.Result{}, nil
 }
 
-func updateStatus(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
+func waitForInit(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 	reqLogger := log.WithValues("Name", db.Name, "Namespace", db.Namespace)
-	// Update the CockroachDB status with the pod names
+
+	if db.Status.ClusterReadyForInit {
+		return false, reconcile.Result{}, nil
+	}
+
 	// List the pods for this cockroachdb's deployment
 	podList := &corev1.PodList{}
 	labelSelector := labels.SelectorFromSet(labelsForCockroachDB(db.Name))
@@ -74,71 +74,143 @@ func updateStatus(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachD
 		reqLogger.Error(err, "Failed to list pods")
 		return true, reconcile.Result{}, err
 	}
+
 	var nodes []dbv1alpha1.CockroachDBNode
 	var node corev1.Pod
+	var readyNodes int32 = 0
 	for _, node = range podList.Items {
+		nodeReady := podReadyForInit(node)
+		if nodeReady {
+			readyNodes++
+		}
 		nodes = append(nodes, dbv1alpha1.CockroachDBNode{
 			Name: node.Name,
-			Ready: podReadiness(node),
-			Serving: podServing(node),
+			ReadyForInit: nodeReady,
 		})
 	}
 
 	if !reflect.DeepEqual(nodes, db.Status.Nodes) {
 		db.Status.Nodes = nodes
+		if int32(podList.Size()) == db.Spec.Cluster.Size && readyNodes == db.Spec.Cluster.Size {
+			db.Status.ClusterReadyForInit = true
+		}
 		err := r.client.Status().Update(context.TODO(), db)
 		if err != nil {
 			reqLogger.Error(err, "Unable to update state of cluster.")
 		}
-		return true, reconcile.Result{Requeue: true}, nil
+		reqLogger.Info(fmt.Sprintf("waitForInit: %+v", db.Status))
 	}
 
 	return false, reconcile.Result{}, nil
 }
 
-func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
-	reqLogger := log.WithValues("Job.Name", db.Name, "Job.Namespace", db.Namespace)
-	// Check if the Init Job has already run, if not create a new one
-	err := r.client.Get(context.TODO(), types.NamespacedName{Name: db.Name, Namespace: db.Namespace}, info.Object)
-	if err != nil && errors.IsNotFound(err) {
-		// Init Job Does not exist, let's check if the StatefulSet is ready for us
-		if !isClusterReady(db) {
-			if !isClusterServing(db) {
-				reqLogger.Info("waiting for Pods to become ready")
-				r.status = "waiting for Pods to become ready"
-				return true, reconcile.Result{Requeue: true, RequeueAfter: time.Second * 10}, nil
-			} else {
-				reqLogger.Info("cluster seems to be serving, starting batch job")
-			}
-		}
 
-		// All the initial nodes are Running but not Ready
-		dep := info.Resource.CallHandler(r, db)
+
+func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
+
+	// our work is done
+	if db.Status.ClusterInitialised {
+		return false, reconcile.Result{}, nil
+	}
+
+	resource := info.Resource.CallHandler(r, db)
+
+	reqLogger := log.WithValues("Job.Name", db.Name, "Job.Namespace", db.Namespace)
+	// Try to retrieve the init job
+	err := r.client.Get(context.TODO(), types.NamespacedName{Name: db.Name, Namespace: db.Namespace}, resource)
+	if err == nil {
+		// job has just been scheduled, mark it as such
+		db.Status.ClusterInitialised = true
+		db.Status.ClusterReadyForInit = true
+		err = r.client.Status().Update(context.TODO(), db)
+		if err != nil {
+			reqLogger.Error(err, "Unable to update state of cluster.")
+		}
+		return false, reconcile.Result{}, nil
+	} else if errors.IsNotFound(err) {
+		// Job not found, make it so
 		reqLogger.Info("Creating an Init Batch Job")
-		err = r.client.Create(context.TODO(), dep.(runtime.Object))
+		err = r.client.Create(context.TODO(), resource)
 		if err != nil {
 			reqLogger.Error(err, "Failed to create new Job")
 			return true, reconcile.Result{}, err
 		}
-		// Job created successfully - return and requeue
-		r.status = "Initialising Cluster"
-		return true, reconcile.Result{Requeue: true, RequeueAfter: time.Second * 5}, nil
-	} else if err != nil {
-		reqLogger.Error(err, "Failed to get Init Job")
+		// Give the boys some time to work
+		return true, reconcile.Result{Requeue: true, RequeueAfter: 15 * time.Second}, nil
+	}
+
+	reqLogger.Error(err, "Failed to get Init Job")
+	return true, reconcile.Result{}, err
+}
+
+func waitForServing(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
+	reqLogger := log.WithValues("Name", db.Name, "Namespace", db.Namespace)
+
+	if !db.Status.ClusterInitialised || db.Status.ClusterServing {
+		return false, reconcile.Result{}, nil
+	}
+
+	// List the pods for this cockroachdb's deployment
+	podList := &corev1.PodList{}
+	labelSelector := labels.SelectorFromSet(labelsForCockroachDB(db.Name))
+	listOps := &client.ListOptions{Namespace: db.Namespace, LabelSelector: labelSelector}
+	err := r.client.List(context.TODO(), listOps, podList)
+	if err != nil {
+		reqLogger.Error(err, "Failed to list pods")
 		return true, reconcile.Result{}, err
 	}
 
-	if !isClusterServing(db) {
-		log.Info("waiting for cluster to start serving")
-		return true, reconcile.Result{Requeue: true, RequeueAfter: time.Second * 5}, nil
+	var nodes []dbv1alpha1.CockroachDBNode
+	var node corev1.Pod
+	var servingNodes int32 = 0
+	for _, node = range podList.Items {
+		nodeServing := podServing(node)
+		if nodeServing {
+			servingNodes++
+		}
+		nodes = append(nodes, dbv1alpha1.CockroachDBNode{
+			Name: node.Name,
+			ReadyForInit: podReadyForInit(node),
+			Serving:      nodeServing,
+		})
 	}
 
-	if r.status != "Cluster Serving" {
-		r.status = "Cluster Serving"
-		return true, reconcile.Result{Requeue: true}, nil
+	db.Status.Nodes = nodes
+	db.Status.ClusterReadyForInit = true
+	db.Status.ClusterInitialised = true
+	if db.Spec.Cluster.Size == servingNodes && int32(len(podList.Items)) == db.Spec.Cluster.Size {
+		db.Status.ClusterServing = true
 	}
-
+	err = r.client.Status().Update(context.TODO(), db)
+	if err != nil {
+		reqLogger.Error(err, "Unable to update state of cluster.")
+	}
+	reqLogger.Info(fmt.Sprintf("waitForServing: %+v", db.Status))
 	return false, reconcile.Result{}, nil
+}
+
+
+func podReadyForInit(pod corev1.Pod) bool {
+	if len(pod.Status.ContainerStatuses) < 1 {
+		return false
+	}
+	podStatus := pod.Status.ContainerStatuses[0]
+
+	if podStatus.Name == "cockroachdb" && podStatus.State.Running != nil {
+		return true
+	}
+	return false
+}
+
+func podServing(pod corev1.Pod) bool {
+	if pod.Status.Phase == corev1.PodRunning {
+		for _, condition := range pod.Status.Conditions {
+			if condition.Type == corev1.PodReady && condition.Status == corev1.ConditionTrue {
+				return true
+			}
+		}
+	}
+	return false
 }
 
 // labelsForCockroachDB returns the labels for selecting the resources
@@ -146,52 +218,4 @@ func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 func labelsForCockroachDB(name string) map[string]string {
 	//return map[string]string{"app": name, "cockroachdb_cr": name}
 	return map[string]string{"app": name}
-}
-
-// are Pods ready to be initialized?
-func podReadiness(pod corev1.Pod) bool {
-	if len(pod.Status.ContainerStatuses) > 0 {
-		status := pod.Status.ContainerStatuses[0]
-		if status.Name == "cockroachdb" && status.Ready == false && status.RestartCount == 0 && status.State.Running != nil {
-			return true
-		}
-	}
-	return false
-}
-
-// are Pods ready to be initialized?
-func podServing(pod corev1.Pod) bool {
-		if len(pod.Status.ContainerStatuses) > 0 {
-			status := pod.Status.ContainerStatuses[0]
-			if status.Name == "cockroachdb" && status.Ready == true {
-				return true
-			}
-		}
-		return false
-}
-
-func isClusterReady(db *dbv1alpha1.CockroachDB) bool {
-	var readyNodes int32 = 0
-	for _, node := range db.Status.Nodes {
-		if node.Ready {
-			readyNodes++
-		}
-	}
-	if readyNodes == db.Spec.Cluster.Size {
-		return true
-	}
-	return false
-}
-
-func isClusterServing(db *dbv1alpha1.CockroachDB) bool {
-	var servingNodes int32 = 0
-	for _, node := range db.Status.Nodes {
-		if node.Serving {
-			servingNodes++
-		}
-	}
-	if servingNodes == db.Spec.Cluster.Size {
-		return true
-	}
-	return false
 }

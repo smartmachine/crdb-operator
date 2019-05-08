@@ -4,26 +4,13 @@ import (
 	dbv1alpha1 "go.smartmachine.io/crdb-operator/pkg/apis/db/v1alpha1"
 	corev1 "k8s.io/api/core/v1"
 	metav1 "k8s.io/apimachinery/pkg/apis/meta/v1"
+	"k8s.io/apimachinery/pkg/runtime"
 	"k8s.io/apimachinery/pkg/util/intstr"
 	"sigs.k8s.io/controller-runtime/pkg/controller/controllerutil"
 )
 
-const DashboardHandler Name = 1400
-
-func init() {
-	// Register Client
-	info := NewInfo(DashboardServiceForCockroachDB, createIfNotExist, &corev1.Service{})
-	info.Postfix = "-dashboard"
-	info.SpecConditional = "Spec.Dashboard.Enabled"
-	info.SuppressStatus = true
-	err := Register(DashboardHandler, info)
-	if err != nil {
-		panic(err.Error())
-	}
-}
-
 // dashboardServiceForCockroachDB returns a cockroachdb DashboardService object
-func DashboardServiceForCockroachDB(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) interface{} {
+func dashboard(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
 	reqLogger.Info("Reconciling CockroachDB")

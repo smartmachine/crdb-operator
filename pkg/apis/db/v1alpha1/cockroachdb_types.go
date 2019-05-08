@@ -36,15 +36,17 @@ type CockroachDBSpec struct {
 // CockroachDBStatus defines the observed state of CockroachDB
 type CockroachDBStatus struct {
 	// Nodes are the names of the cockroachdb pods
-	Nodes []CockroachDBNode `json:"nodes,omitempty"`
-	State string `json:"state,omitempty"`
+	Nodes               []CockroachDBNode `json:"nodes"`
+	ClusterReadyForInit bool              `json:"readyforinit"`
+	ClusterInitialised  bool              `json:"initialised"`
+	ClusterServing      bool              `json:"serving"`
 }
 
 // CockroachDBNodeList
 type CockroachDBNode struct {
-	Name    string `json:"name"`
-	Ready   bool   `json:"ready"`
-	Serving bool   `json:"serving"`
+	Name           string `json:"name"`
+	ReadyForInit   bool   `json:"ready"`
+	Serving        bool   `json:"serving"`
 }
 
 // +genclient

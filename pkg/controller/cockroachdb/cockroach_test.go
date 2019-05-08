@@ -54,21 +54,23 @@ func TestMain(m *testing.M) {
 			},
 		},
 		Status: dbv1alpha1.CockroachDBStatus{
-			State: "Cluster Serving",
+			ClusterReadyForInit: true,
+			ClusterInitialised: true,
+			ClusterServing: true,
 			Nodes: []dbv1alpha1.CockroachDBNode{
 				{
 					Name: name + "-1",
-					Ready: false,
+					ReadyForInit: true,
 					Serving: true,
 				},
 				{
 					Name: name + "-2",
-					Ready: false,
+					ReadyForInit: true,
 					Serving: true,
 				},
 				{
 					Name: name + "-3",
-					Ready: false,
+					ReadyForInit: true,
 					Serving: true,
 				},
 			},
