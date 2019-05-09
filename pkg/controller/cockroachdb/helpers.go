@@ -18,7 +18,7 @@ import (
 func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 	resource := info.Resource.CallHandler(r, db)
 	resourceName := reflect.TypeOf(resource).String()
-	reqLogger := log.WithValues(resourceName + ".Name", db.Name, resourceName + ".Namespace", db.Namespace)
+	reqLogger := log.WithValues(resourceName+".Name", db.Name, resourceName+".Namespace", db.Namespace)
 
 	if info.SpecConditional != "" {
 		val, err := lookup.LookupString(*db, info.SpecConditional)
@@ -34,9 +34,9 @@ func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockro
 	// Scope NamespacedName correctly
 	var objectName types.NamespacedName
 	if info.NoNamespace {
-		objectName = types.NamespacedName{Name: fmt.Sprintf("%s%s",db.Name, info.Postfix)}
+		objectName = types.NamespacedName{Name: fmt.Sprintf("%s%s", db.Name, info.Postfix)}
 	} else {
-		objectName = types.NamespacedName{Name: fmt.Sprintf("%s%s",db.Name, info.Postfix), Namespace: db.Namespace}
+		objectName = types.NamespacedName{Name: fmt.Sprintf("%s%s", db.Name, info.Postfix), Namespace: db.Namespace}
 	}
 
 	// Check if the Object already exists, if not create a new one
@@ -84,7 +84,7 @@ func waitForInit(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 			readyNodes++
 		}
 		nodes = append(nodes, dbv1alpha1.CockroachDBNode{
-			Name: node.Name,
+			Name:         node.Name,
 			ReadyForInit: nodeReady,
 		})
 	}
@@ -103,8 +103,6 @@ func waitForInit(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 
 	return false, reconcile.Result{}, nil
 }
-
-
 
 func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 
@@ -169,7 +167,7 @@ func waitForServing(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroac
 			servingNodes++
 		}
 		nodes = append(nodes, dbv1alpha1.CockroachDBNode{
-			Name: node.Name,
+			Name:         node.Name,
 			ReadyForInit: podReadyForInit(node),
 			Serving:      nodeServing,
 		})
@@ -188,7 +186,6 @@ func waitForServing(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroac
 	reqLogger.Info(fmt.Sprintf("waitForServing: %+v", db.Status))
 	return false, reconcile.Result{}, nil
 }
-
 
 func podReadyForInit(pod corev1.Pod) bool {
 	if len(pod.Status.ContainerStatuses) < 1 {

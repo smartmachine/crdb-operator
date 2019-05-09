@@ -30,8 +30,8 @@ func crdbClient(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Obje
 		Spec: corev1.PodSpec{
 			ServiceAccountName: m.Name,
 			InitContainers: []corev1.Container{{
-				Name: "init-certs",
-				Image: "smartmachine/cockroach-k8s-request-cert:0.3",
+				Name:            "init-certs",
+				Image:           "smartmachine/cockroach-k8s-request-cert:0.3",
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				Command: []string{
 					"/bin/ash",
@@ -49,16 +49,16 @@ func crdbClient(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Obje
 					},
 				}},
 				VolumeMounts: []corev1.VolumeMount{{
-					Name: "client-certs",
+					Name:      "client-certs",
 					MountPath: "/cockroach-certs",
 				}},
 			}},
 			Containers: []corev1.Container{{
-				Name: "cockroachdb-client",
-				Image: m.Spec.Cluster.Image,
+				Name:            "cockroachdb-client",
+				Image:           m.Spec.Cluster.Image,
 				ImagePullPolicy: corev1.PullIfNotPresent,
 				VolumeMounts: []corev1.VolumeMount{{
-					Name: "client-certs",
+					Name:      "client-certs",
 					MountPath: "/cockroach-certs",
 				}},
 				Command: []string{

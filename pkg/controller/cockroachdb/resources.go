@@ -19,8 +19,8 @@ var resources = []Info{
 	{Resource: nil,                 Reconcile: waitForInit},
 	{Resource: batchJob,            Reconcile: initCluster},
 	{Resource: nil,                 Reconcile: waitForServing},
-	{Resource: crdbClient,          Reconcile: createIfNotExist, Postfix: "-client",    SpecConditional: "Spec.Client.Enabled"},
-	{Resource: dashboard,           Reconcile: createIfNotExist, Postfix: "-dashboard", SpecConditional: "Spec.Dashboard.Enabled" },
+	{Resource: client,              Reconcile: createIfNotExist},
+	{Resource: dashboard,           Reconcile: createIfNotExist},
 
 
 }
@@ -60,5 +60,9 @@ func (h ResourceType) CallHandler(r *ReconcileCockroachDB, m *dbv1alpha1.Cockroa
 
 func (h ReconcileType) CallHandler(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 	return h(info, db, r)
+}
+
+func Enumerate() []Info {
+	return resources
 }
 
