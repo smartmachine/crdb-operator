@@ -36,7 +36,7 @@ type CockroachDBSpec struct {
 // CockroachDBStatus defines the observed state of CockroachDB
 type CockroachDBStatus struct {
 	// Nodes are the names of the cockroachdb pods
-	Nodes               []CockroachDBNode `json:"nodes"`
+	Nodes               []CockroachDBNode `json:"nodes,omitempty"`
 	ClusterReadyForInit bool              `json:"readyforinit"`
 	ClusterInitialised  bool              `json:"initialised"`
 	ClusterServing      bool              `json:"serving"`

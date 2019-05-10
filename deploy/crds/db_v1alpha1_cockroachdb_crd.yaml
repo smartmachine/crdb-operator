@@ -86,7 +86,6 @@ spec:
             serving:
               type: boolean
           required:
-          - nodes
           - readyforinit
           - initialised
           - serving
