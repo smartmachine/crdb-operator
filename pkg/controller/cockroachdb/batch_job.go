@@ -11,10 +11,7 @@ import (
 
 // jobForCockroachDB returns a cockroachdb Job object
 func batchJob(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
-
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
-	reqLogger.Info("Reconciling CockroachDB Batch Job")
-
 	ls := labelsForCockroachDB(m.Name)
 
 	one := int32(1)

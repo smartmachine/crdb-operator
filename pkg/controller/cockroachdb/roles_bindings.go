@@ -12,7 +12,6 @@ import (
 func role(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
-	reqLogger.Info("Reconciling CockroachDB")
 
 	ls := labelsForCockroachDB(m.Name)
 
@@ -45,7 +44,6 @@ func role(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 func roleBinding(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
-	reqLogger.Info("Reconciling CockroachDB")
 
 	ls := labelsForCockroachDB(m.Name)
 

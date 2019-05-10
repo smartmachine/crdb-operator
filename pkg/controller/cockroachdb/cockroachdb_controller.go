@@ -43,6 +43,15 @@ func add(mgr manager.Manager, r reconcile.Reconciler) error {
 		return err
 	}
 
+	// Watch for changes to primary resource CockroachDB
+	err = c.Watch(&source.Kind{Type: &appsv1.StatefulSet{}}, &handler.EnqueueRequestForOwner{
+		IsController: true,
+		OwnerType: &dbv1alpha1.CockroachDB{},
+	})
+	if err != nil {
+		return err
+	}
+
 	// Watch for changes to secondary resource Pods and requeue the owner CockroachDB
 	err = c.Watch(&source.Kind{Type: &corev1.Pod{}}, &handler.EnqueueRequestForOwner{
 		IsController: true,

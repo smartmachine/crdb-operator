@@ -12,13 +12,12 @@ import (
 	"reflect"
 	"sigs.k8s.io/controller-runtime/pkg/client"
 	"sigs.k8s.io/controller-runtime/pkg/reconcile"
-	"time"
 )
 
 func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 	resource := info.Resource.CallHandler(r, db)
 	resourceName := reflect.TypeOf(resource).String()
-	reqLogger := log.WithValues(resourceName+".Name", db.Name, resourceName+".Namespace", db.Namespace)
+	reqLogger := log.WithValues("Name", db.Name, "Namespace", db.Namespace)
 
 	if info.SpecConditional != "" {
 		val, err := lookup.LookupString(*db, info.SpecConditional)
@@ -43,10 +42,10 @@ func createIfNotExist(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockro
 	err := r.client.Get(context.TODO(), objectName, resource)
 	if err != nil && errors.IsNotFound(err) {
 		// Define a new resource object
-		reqLogger.Info(fmt.Sprintf("Creating a new %s", resourceName))
+		reqLogger.Info(fmt.Sprintf("Create: %s", resourceName))
 		err = r.client.Create(context.TODO(), resource)
 		if err != nil {
-			reqLogger.Error(err, fmt.Sprintf("Failed to create a new %s", resourceName))
+			reqLogger.Error(err, fmt.Sprintf("Failed to create %s", resourceName))
 			return true, reconcile.Result{}, err
 		}
 		// Resource created successfully - return
@@ -89,17 +88,17 @@ func waitForInit(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 		})
 	}
 
-	if !reflect.DeepEqual(nodes, db.Status.Nodes) {
+	if len(nodes) > 0 {
 		db.Status.Nodes = nodes
-		if int32(podList.Size()) == db.Spec.Cluster.Size && readyNodes == db.Spec.Cluster.Size {
-			db.Status.ClusterReadyForInit = true
-		}
-		err := r.client.Status().Update(context.TODO(), db)
-		if err != nil {
-			reqLogger.Error(err, "Unable to update state of cluster.")
-		}
-		reqLogger.Info(fmt.Sprintf("waitForInit: %+v", db.Status))
 	}
+	if int32(len(podList.Items)) == db.Spec.Cluster.Size && readyNodes == db.Spec.Cluster.Size {
+		db.Status.ClusterReadyForInit = true
+	}
+	err = r.client.Status().Update(context.TODO(), db)
+	if err != nil {
+		reqLogger.Error(err, "Unable to update state of cluster.")
+	}
+	reqLogger.Info(fmt.Sprintf("waitForInit: %+v", db.Status))
 
 	return false, reconcile.Result{}, nil
 }
@@ -107,17 +106,16 @@ func waitForInit(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 
 	// our work is done
-	if db.Status.ClusterInitialised {
+	if !db.Status.ClusterReadyForInit || db.Status.ClusterInitialised {
 		return false, reconcile.Result{}, nil
 	}
 
 	resource := info.Resource.CallHandler(r, db)
-
-	reqLogger := log.WithValues("Job.Name", db.Name, "Job.Namespace", db.Namespace)
+	resourceName := reflect.TypeOf(resource).String()
+	reqLogger := log.WithValues("Name", db.Name, "Namespace", db.Namespace)
 	// Try to retrieve the init job
 	err := r.client.Get(context.TODO(), types.NamespacedName{Name: db.Name, Namespace: db.Namespace}, resource)
 	if err == nil {
-		// job has just been scheduled, mark it as such
 		db.Status.ClusterInitialised = true
 		db.Status.ClusterReadyForInit = true
 		err = r.client.Status().Update(context.TODO(), db)
@@ -127,14 +125,20 @@ func initCluster(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB
 		return false, reconcile.Result{}, nil
 	} else if errors.IsNotFound(err) {
 		// Job not found, make it so
-		reqLogger.Info("Creating an Init Batch Job")
+		reqLogger.Info(fmt.Sprintf("Create: %s", resourceName))
 		err = r.client.Create(context.TODO(), resource)
 		if err != nil {
-			reqLogger.Error(err, "Failed to create new Job")
+			reqLogger.Error(err, fmt.Sprintf("Failed to create %s", resourceName))
 			return true, reconcile.Result{}, err
 		}
+		db.Status.ClusterInitialised = true
+		db.Status.ClusterReadyForInit = true
+		err = r.client.Status().Update(context.TODO(), db)
+		if err != nil {
+			reqLogger.Error(err, "Unable to update state of cluster.")
+		}
 		// Give the boys some time to work
-		return true, reconcile.Result{Requeue: true, RequeueAfter: 15 * time.Second}, nil
+		return false, reconcile.Result{}, nil
 	}
 
 	reqLogger.Error(err, "Failed to get Init Job")

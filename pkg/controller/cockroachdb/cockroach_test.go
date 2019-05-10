@@ -207,14 +207,11 @@ func TestCockroachDBController(t *testing.T) {
 				NamespacedName: crNamespacedName,
 			}
 
-			res, err := r.Reconcile(req)
+			_, err := r.Reconcile(req)
 			if err != nil {
 				t.Fatalf("reconcile: (%+v)", err)
 			}
-			// Check the result of reconciliation to make sure it has the desired state.
-			if !res.Requeue {
-				t.Error("reconcile did not requeue request as expected")
-			}
+
 
 			// Check if object has been created
 			err = cl.Get(context.TODO(), objNamespacedName, test.object)

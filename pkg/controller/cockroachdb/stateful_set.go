@@ -15,7 +15,6 @@ import (
 func statefulSet(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
 
 	reqLogger := log.WithValues("CockroachDB.Meta.Name", m.ObjectMeta.Name, "CockroachDB.Meta.Namespace", m.ObjectMeta.Namespace)
-	reqLogger.Info("Reconciling CockroachDB")
 
 	requestMemory, _ := resource.ParseQuantity(m.Spec.Cluster.RequestMemory)
 	limitMemory, _ := resource.ParseQuantity(m.Spec.Cluster.LimitMemory)

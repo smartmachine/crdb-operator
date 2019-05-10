@@ -19,8 +19,8 @@ var resources = []Info{
 	{Resource: nil,                 Reconcile: waitForInit},
 	{Resource: batchJob,            Reconcile: initCluster},
 	{Resource: nil,                 Reconcile: waitForServing},
-	{Resource: client,              Reconcile: createIfNotExist},
-	{Resource: dashboard,           Reconcile: createIfNotExist},
+	{Resource: crdbClient,          Reconcile: createIfNotExist, Postfix: "-client",    SpecConditional: "Spec.Client.Enabled"},
+	{Resource: dashboard,           Reconcile: createIfNotExist, Postfix: "-dashboard", SpecConditional: "Spec.Dashboard.Enabled" },
 
 
 }
@@ -37,7 +37,6 @@ type ReconcileHandler interface {
 
 type ReconcileType func(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error)
 
-type Name int
 type Info struct {
 	Resource    ResourceType
 	Reconcile   ReconcileType
@@ -45,13 +44,6 @@ type Info struct {
 	SpecConditional string
 	NoNamespace bool
 }
-type Map map[Name]*Info
-
-type Config struct {
-	Handlers Map
-	keys     []int
-}
-
 
 
 func (h ResourceType) CallHandler(r *ReconcileCockroachDB, m *dbv1alpha1.CockroachDB) runtime.Object {
@@ -61,8 +53,3 @@ func (h ResourceType) CallHandler(r *ReconcileCockroachDB, m *dbv1alpha1.Cockroa
 func (h ReconcileType) CallHandler(info *Info, db *dbv1alpha1.CockroachDB, r *ReconcileCockroachDB) (bool, reconcile.Result, error) {
 	return h(info, db, r)
 }
-
-func Enumerate() []Info {
-	return resources
-}
-
