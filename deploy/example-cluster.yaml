@@ -5,7 +5,7 @@ metadata:
   namespace: crdb
 spec:
   cluster:
-    image: cockroachdb/cockroach:v2.1.6
+    image: cockroachdb/cockroach:v19.1.0
     size: 3
     requestMemory: 300Mi
     limitMemory: 500Mi

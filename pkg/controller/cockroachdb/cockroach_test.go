@@ -55,23 +55,23 @@ func TestMain(m *testing.M) {
 		},
 		Status: dbv1alpha1.CockroachDBStatus{
 			ClusterReadyForInit: true,
-			ClusterInitialised: true,
-			ClusterServing: true,
+			ClusterInitialised: false,
+			ClusterServing: false,
 			Nodes: []dbv1alpha1.CockroachDBNode{
 				{
 					Name: name + "-1",
 					ReadyForInit: true,
-					Serving: true,
+					Serving: false,
 				},
 				{
 					Name: name + "-2",
 					ReadyForInit: true,
-					Serving: true,
+					Serving: false,
 				},
 				{
 					Name: name + "-3",
 					ReadyForInit: true,
-					Serving: true,
+					Serving: false,
 				},
 			},
 		},
@@ -176,6 +176,7 @@ func TestCockroachDBController(t *testing.T) {
 		namePostfix string
 		namespace   string
 		object      runtime.Object
+		reconcile   bool
 	}{
 		{description: "TestServiceAccount",      name: name, namespace: namespace, object: &corev1.ServiceAccount{}},
 		{description: "TestRole",                name: name, namespace: namespace, object: &rbacv1.Role{}},
@@ -186,7 +187,7 @@ func TestCockroachDBController(t *testing.T) {
 		{description: "TestService",             name: name, namespace: namespace, object: &corev1.Service{}},
 		{description: "TestPodDisruptionBudget", name: name, namespace: namespace, object: &policyv1beta1.PodDisruptionBudget{}},
 		{description: "TestStatefulSession",     name: name, namespace: namespace, object: &appsv1.StatefulSet{}},
-		{description: "TestBatchJob",            name: name, namespace: namespace, object: &batchv1.Job{}},
+		{description: "TestBatchJob",            name: name, namespace: namespace, object: &batchv1.Job{}, reconcile: true},
 	}
 
 	for _, test := range tests {
@@ -211,8 +212,7 @@ func TestCockroachDBController(t *testing.T) {
 			if err != nil {
 				t.Fatalf("reconcile: (%+v)", err)
 			}
-
-
+			
 			// Check if object has been created
 			err = cl.Get(context.TODO(), objNamespacedName, test.object)
 			if err != nil {
